@@ -1,0 +1,23 @@
+{
+  "password": "passphrase",
+  "entries": [
+    {
+      "label": "rsatest1",
+      "algorithm": "SHA256WithRSA",
+      "keyAlgorithm": "RSA",
+      "rsaKeySize": "2048"
+    },
+    {
+      "label": "ecdsatest1",
+      "algorithm": "SHA256WithECDSA",
+      "keyAlgorithm": "ECDSA",
+      "ecdsaNamedCurve": "secp192r1"
+    },
+    {
+      "label": "ecdsatest2",
+      "algorithm": "SHA256WithECDSA",
+      "keyAlgorithm": "ECDSA",
+      "ecdsaNamedCurve": "secp256r1"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-import java.io.FileOutputStream;
+package com.redhat.akashche.keystoregen;
+
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;

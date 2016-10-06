@@ -3,6 +3,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.redhat.akashche.keystoregen.KeystoreConfig;
+import com.redhat.akashche.keystoregen.KeystoreGenerator;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
@@ -36,9 +38,7 @@ public class KeystoreGeneratorTest {
             dir = Files.createTempDir();
             File keystoreFile = new File(dir, KEYSTORE_NAME);
 
-            String config = new Gson().toJson(ImmutableMap.builder()
-                    .put("keystoreType", "PKCS12")
-                    .put("filename", keystoreFile.getAbsolutePath())
+            String config = GSON.toJson(ImmutableMap.builder()
                     .put("password", KEYSTORE_PASSWORD)
                     .put("entries", ImmutableList.builder()
                             .add(ImmutableMap.builder()

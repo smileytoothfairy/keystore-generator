@@ -1,3 +1,5 @@
+package com.redhat.akashche.keystoregen;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,16 +13,11 @@ public class KeystoreConfig {
     private static final String ISO8601_FORMAT = "yyyy-MM-dd";
 
     private String keystoreType = "PKCS12";
-    private String filename;
     private String password;
     private ArrayList<Entry> entries = new ArrayList<>();
 
     String getKeystoreType() {
         return keystoreType;
-    }
-
-    String getFilename() {
-        return filename;
     }
 
     String getPassword() {
