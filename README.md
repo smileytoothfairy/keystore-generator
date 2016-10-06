@@ -2,7 +2,7 @@ PKCS#12 Keystores Generator Utility
 ===================================
 
 This project implements a command-line tool for generating [PKCS#12](https://en.wikipedia.org/wiki/PKCS_12)
-keystores which can be used with various [X.509](https://en.wikipedia.org/wiki/X.509).
+keystores which can be used with various [X.509](https://en.wikipedia.org/wiki/X.509) tools.
 
 This tool uses [Bouncy Castle](https://www.bouncycastle.org/java.html) crypto library.
 
@@ -24,7 +24,7 @@ List keystore contents:
 License information
 -------------------
 
-This project is released under the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
+This project is released under the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
 Changelog
 ---------
