@@ -34,9 +34,11 @@ public class KeystoreConfig {
     public static class Entry {
         private String label;
         private String algorithm;
+        private String rsaKeySize;
+        private String ecdsaNamedCurve;
         private String keyAlgorithm;
-        private String validFrom;
-        private String validTo;
+        private String validFrom = "2016-01-01";
+        private String validTo = "2030-12-31";
         private String x500_C = "US";
         private String x500_O = "Test Organizaion";
         private String x500_OU = "Development";
@@ -79,6 +81,14 @@ public class KeystoreConfig {
 
         public String getX500_OU() {
             return x500_OU;
+        }
+
+        public int getRsaKeySize() {
+            return Integer.parseInt(rsaKeySize);
+        }
+
+        public String getEcdsaNamedCurve() {
+            return ecdsaNamedCurve;
         }
     }
 }

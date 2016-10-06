@@ -3,8 +3,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.*;
 import java.util.Date;
 
 import org.bouncycastle.asn1.DERBMPString;
@@ -18,40 +17,22 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 public class KeystoreGenerator {
     public static final Provider BCPROV = new BouncyCastleProvider();
 
-    private static final RSAPublicKeySpec RSA_PUB_KEY_SPEC = new RSAPublicKeySpec(
-            new BigInteger("b4a7e46170574f16a97082b22be58b6a2a629798419be12872a4bdba626cfae9900f76abfb12139dce5de56564fab2b6543165a040c606887420e33d91ed7ed7", 16),
-            new BigInteger("11", 16));
-
-    private static final RSAPrivateCrtKeySpec RSA_PRIV_KEY_SPEC = new RSAPrivateCrtKeySpec(
-            new BigInteger("b4a7e46170574f16a97082b22be58b6a2a629798419be12872a4bdba626cfae9900f76abfb12139dce5de56564fab2b6543165a040c606887420e33d91ed7ed7", 16),
-            new BigInteger("11", 16),
-            new BigInteger("9f66f6b05410cd503b2709e88115d55daced94d1a34d4e32bf824d0dde6028ae79c5f07b580f5dce240d7111f7ddb130a7945cd7d957d1920994da389f490c89", 16),
-            new BigInteger("c0a0758cdf14256f78d4708c86becdead1b50ad4ad6c5c703e2168fbf37884cb", 16),
-            new BigInteger("f01734d7960ea60070f1b06f2bb81bfac48ff192ae18451d5e56c734a5aab8a5", 16),
-            new BigInteger("b54bb9edff22051d9ee60f9351a48591b6500a319429c069a3e335a1d6171391", 16),
-            new BigInteger("d3d83daf2a0cecd3367ae6f8ae1aeb82e9ac2f816c6fc483533d8297dd7884cd", 16),
-            new BigInteger("b8f52fc6f38593dabb661d3f50f8897f8106eee68b1bce78a95b132b4e5b5d19", 16));
-
-    public void generate(KeystoreConfig cf) throws Exception {
+    public KeyStore generate(KeystoreConfig cf) throws Exception {
         KeyStore store = KeyStore.getInstance(cf.getKeystoreType(), BCPROV);
         store.load(null, null);
 
         for (KeystoreConfig.Entry en : cf.getEntries()) {
-            final Keys keys;
-            if ("RSA".equalsIgnoreCase(en.getKeyAlgorithm())) {
-                KeyFactory kf = KeyFactory.getInstance("RSA", BCPROV);
-                keys = new Keys(kf.generatePrivate(RSA_PRIV_KEY_SPEC), kf.generatePublic(RSA_PUB_KEY_SPEC),
-                        kf.generatePrivate(RSA_PRIV_KEY_SPEC), kf.generatePublic(RSA_PUB_KEY_SPEC),
-                        kf.generatePrivate(RSA_PRIV_KEY_SPEC), kf.generatePublic(RSA_PUB_KEY_SPEC));
-            } else throw new IllegalArgumentException("Unsupported 'keyAlgorithm': [" + en.getKeyAlgorithm() + "]");
+            Keys keys = generateKeys(en);
 
             Certificate[] chain = new Certificate[3];
             chain[2] = createMasterCert(en, keys);
@@ -64,9 +45,7 @@ public class KeystoreGenerator {
             store.setKeyEntry(en.getLabel(), keys.certPrivate, null, chain);
         }
 
-        try (FileOutputStream out = new FileOutputStream(cf.getFilename())) {
-            store.store(out, cf.getPassword().toCharArray());
-        }
+        return store;
     }
 
     private Certificate createMasterCert(KeystoreConfig.Entry en, Keys keys) throws Exception {
@@ -144,6 +123,32 @@ public class KeystoreGenerator {
         bagAttr.setBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString(label));
         bagAttr.setBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId, eu.createSubjectKeyIdentifier(keys.certPublic));
         return cert;
+    }
+
+    private Keys generateKeys(KeystoreConfig.Entry en) throws Exception {
+        if ("RSA".equalsIgnoreCase(en.getKeyAlgorithm())) {
+            KeyPairGenerator keygen = KeyPairGenerator.getInstance("RSA", BCPROV);
+            keygen.initialize(en.getRsaKeySize(), new SecureRandom());
+            KeyPair pair = keygen.generateKeyPair();
+            KeyFactory kf = KeyFactory.getInstance("RSA", BCPROV);
+            KeySpec privSpec = new PKCS8EncodedKeySpec(pair.getPrivate().getEncoded());
+            KeySpec pubSpec = new X509EncodedKeySpec(pair.getPublic().getEncoded());
+            return new Keys(kf.generatePrivate(privSpec), kf.generatePublic(pubSpec),
+                    kf.generatePrivate(privSpec), kf.generatePublic(pubSpec),
+                    kf.generatePrivate(privSpec), kf.generatePublic(pubSpec));
+        } else if ("ECDSA".equalsIgnoreCase(en.getKeyAlgorithm())) {
+            ECParameterSpec spec = ECNamedCurveTable.getParameterSpec(en.getEcdsaNamedCurve());
+            if (null == spec) throw new IllegalArgumentException("Invalid 'ecdsaNamedCurve': [" + en.getEcdsaNamedCurve() + "]");
+            KeyPairGenerator keygen = KeyPairGenerator.getInstance("ECDSA", BCPROV);
+            keygen.initialize(spec, new SecureRandom());
+            KeyPair pair = keygen.generateKeyPair();
+            KeyFactory kf = KeyFactory.getInstance("ECDSA", BCPROV);
+            KeySpec privSpec = new PKCS8EncodedKeySpec(pair.getPrivate().getEncoded());
+            KeySpec pubSpec = new X509EncodedKeySpec(pair.getPublic().getEncoded());
+            return new Keys(kf.generatePrivate(privSpec), kf.generatePublic(pubSpec),
+                    kf.generatePrivate(privSpec), kf.generatePublic(pubSpec),
+                    kf.generatePrivate(privSpec), kf.generatePublic(pubSpec));
+        } else throw new IllegalArgumentException("Unsupported 'keyAlgorithm': [" + en.getKeyAlgorithm() + "]");
     }
 
     private static class Keys {

@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -44,13 +45,29 @@ public class KeystoreGeneratorTest {
                                     .put("label", "rsatest1")
                                     .put("algorithm", "SHA256WithRSA")
                                     .put("keyAlgorithm", "RSA")
-                                    .put("validFrom", "2016-01-01")
-                                    .put("validTo", "2030-12-31")
+                                    .put("rsaKeySize", "2048")
+                                    .build())
+                            .add(ImmutableMap.builder()
+                                    .put("label", "ecdsatest1")
+                                    .put("algorithm", "SHA256WithECDSA")
+                                    .put("keyAlgorithm", "ECDSA")
+                                    .put("ecdsaNamedCurve", "secp192r1")
+                                    .build())
+                            .add(ImmutableMap.builder()
+                                    .put("label", "ecdsatest2")
+                                    .put("algorithm", "SHA256WithECDSA")
+                                    .put("keyAlgorithm", "ECDSA")
+                                    .put("ecdsaNamedCurve", "secp256r1")
                                     .build())
                             .build())
                     .build());
-            new KeystoreGenerator().generate(GSON.fromJson(config, KeystoreConfig.class));
-
+            // generate
+            KeyStore store = new KeystoreGenerator().generate(GSON.fromJson(config, KeystoreConfig.class));
+            // write to disk
+            try (FileOutputStream out = new FileOutputStream(keystoreFile)) {
+                store.store(out, KEYSTORE_PASSWORD.toCharArray());
+            }
+            // load
             fis = new FileInputStream(keystoreFile);
             KeyStore ks = KeyStore.getInstance("PKCS12", "SunJSSE");
             ks.load(fis, KEYSTORE_PASSWORD.toCharArray());
@@ -66,7 +83,6 @@ public class KeystoreGeneratorTest {
                     ECParameterSpec spec = eckey.getParams();
                     System.out.println("  EC spec: [" + spec + "]");
                 }
-                System.out.println(cert);
             }
         } finally {
             closeQuietly(fis);
