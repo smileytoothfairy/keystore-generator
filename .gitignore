@@ -1,0 +1,8 @@
+/.idea
+/*.iml
+/*/*.iml
+/target
+/*/target
+*.releaseBackup
+release.properties
+*.swp
